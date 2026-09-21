@@ -4,15 +4,16 @@
 #include<initializer_list>
 
 
-
-
-
 template<typename L, typename R>
 class AddExp
 {
 public:
     AddExp(const L& left, const R& right) :  left(left), right(right)
-    {}
+    {
+        if(left.get_size()!=right.get_size())   throw std::invalid_argument("Size mismatch in AddExp");
+        if(left.is_empty() or right.is_empty()) throw std::invalid_argument("Empty size in AddExp");
+    }
+    template<typename T>
     auto operator [] (size_t index) const
     {
         return left[index] + right[index];
@@ -28,7 +29,10 @@ class SubExp
 {
 public:
     SubExp(const L& left, const R& right) :  left(left), right(right)
-    {}
+    {
+        if(left.get_size()!=right.get_size())   throw std::invalid_argument("Size mismatch in AddExp");
+        if(left.is_empty() or right.is_empty()) throw std::invalid_argument("Empty size in AddExp");
+    }
     auto operator [] (size_t index) const
     {
         return left[index] - right[index];
@@ -40,20 +44,65 @@ private:
 };
 
 template<typename L, typename R>
-AddExp<L,R> operator + (const L& left, const R& right)
+class MultyExp
 {
+public:
+    MultyExp(const L& left, const R& right) :   left(left), right(right)
+    {
+        if(left.get_size()!=right.get_size())   throw std::invalid_argument("Size mismatch in AddExp");
+        if(left.is_empty() or right.is_empty()) throw std::invalid_argument("Empty size in AddExp");
+    }
+    auto operator [] (size_t index) const
+    {
+        return left * right[index]; //C * vector[i];
+    }
+    size_t get_size() const {return right.get_size();}
+    
+private:
+    const L& left;
+    const R& right;
+};
+
+
+
+
+
+template<typename T>
+concept is_expr = requires (size_t i, const T& vector)
+{
+    vector[i];
+};
+
+
+
+template<typename L, typename R>
+AddExp<L,R> operator + (const L& left, const R& right) requires is_expr<L> and is_expr<R>
+{
+    std::cout<<"avav ";
     return AddExp<L,R>{left,right};
 }
 
 template<typename L, typename R>
-SubExp<L,R> operator - (const L& left, const R& right)
+SubExp<L,R> operator - (const L& left, const R& right)  requires is_expr<L> and is_expr<R>
 {
     return SubExp<L,R>{left,right};
 }
 
+template<typename Scalar, typename Vec>
+MultyExp<Scalar,Vec> operator * (const Scalar& left, const Vec& right) requires std::is_arithmetic_v<Scalar> and is_expr<Vec> // C * vec
+{
+    return MultyExp<Scalar,Vec>{left, right};
+}
+
+template<typename Vec, typename Scalar>
+MultyExp<Scalar, Vec> operator * (const Vec& left, const Scalar& right) requires std::is_arithmetic_v<Scalar> and is_expr<Vec> // Vec * C
+{
+    return MultyExp<Scalar,Vec>{right, left};
+}
 
 
-
+//Support Vec + Vec , Vec - Vec, Vec + nums, Vec - nums
+//Support C * Vec
 
 
 template<typename T>
@@ -93,6 +142,7 @@ private:
     T* end_data;
     size_t size;
     size_t capacity;
+    size_t rank;
     
     T* allocator(const size_t n);
     void deallocator(T* data);
@@ -100,8 +150,6 @@ private:
     void destroy(T* data);
     void reallocate(size_t new_capacity);
 };
-
-
 
 //Vector()
 template<typename T>
@@ -111,7 +159,7 @@ Vector<T>::Vector() : data(nullptr), size(0), capacity(0), end_data(nullptr)
 template<typename T>
 Vector<T>::Vector(const size_t n) : Vector()
 {
-    std::cout<<"Constructor(n)\n";
+    //std::cout<<"Constructor(n)\n";
     data = allocator(n);
     capacity = n;
 }
@@ -120,7 +168,7 @@ Vector<T>::Vector(const size_t n) : Vector()
 template<typename T>
 Vector<T>::Vector(const size_t n, const T& value) : Vector(n)
 {
-    std::cout<<"Constructor(n,value)\n";
+    //std::cout<<"Constructor(n,value)\n";
     size = capacity;
     for(size_t i=0; i<size; i++)
     {
@@ -133,7 +181,7 @@ Vector<T>::Vector(const size_t n, const T& value) : Vector(n)
 template<typename T>
 Vector<T>::Vector(std::initializer_list<T> other) : Vector(other.size())
 {
-    std::cout<<"Initializer Constructor\n";
+    //std::cout<<"Initializer Constructor\n";
     size = capacity;
     int counter = 0;
     for(const T& element : other)
@@ -149,7 +197,7 @@ Vector<T>::Vector(std::initializer_list<T> other) : Vector(other.size())
 template<typename T>
 Vector<T>::Vector(const Vector& other) : Vector(other.capacity)
 {
-    std::cout<<"Copy Constructor\n";
+    //std::cout<<"Copy Constructor\n";
     size = other.size;
     for(size_t i=0; i<size; i++)
     {
@@ -163,7 +211,7 @@ Vector<T>::Vector(const Vector& other) : Vector(other.capacity)
 template<typename T>
 Vector<T>::Vector(Vector&& other) noexcept : size(other.size), capacity(other.capacity), data(other.data), end_data(other.end_data)
 {
-    std::cout<<"Move Constructor\n";
+    //std::cout<<"Move Constructor\n";
     other.size = 0;
     other.capacity = 0;
     other.data = nullptr;
@@ -193,7 +241,7 @@ template<typename T>
 template<typename Expr>
 Vector<T>::Vector(const Expr& expression) : size(expression.get_size()), capacity(expression.get_size())
 {
-    std::cout<<"Lazy Operation Constructor\n";
+    //std::cout<<"Lazy Operation Constructor\n";
     data = allocator(size);
     for(size_t i=0; i<size; i++)
     {
@@ -254,7 +302,7 @@ Vector<T>& Vector<T>::operator = (const Exp& expression)
 template<typename T>
 Vector<T>::~Vector()
 {
-    std::cout<<"Destructor\n";
+    //std::cout<<"Destructor\n";
     for(size_t i=0; i<size; i++)
     {
         destroy(data+i);
