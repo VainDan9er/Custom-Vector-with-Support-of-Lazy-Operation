@@ -29,6 +29,15 @@ A from-scratch C++ `Vector` implementation focused on **low-level memory control
 | Long chain (`a + b * c - d + e`)         | Significantly faster                   | 2.5–4×+          |
 | Very small vectors (< 32 elements)       | Can be slower                          | 0.7–1.0×         |
 
+| Criterion                        | `std::vector` (ordinary operators)     | Your lazy implementation              | Winner      |
+| -------------------------------- | -------------------------------------- | ------------------------------------- | ----------- |
+| Number of memory allocations     | 1 per intermediate operation           | Only 1 (for the final result)         | Lazy        |
+| Number of data passes            | Equal to the number of operations      | Always 1                              | Lazy        |
+| Temporary objects                | Created                                | Not created                           | Lazy        |
+| Cache efficiency                 | Worse (data is evicted)                | Better (single pass)                  | Lazy        |
+| Small vectors                    | Faster                                 | Slower due to wrappers                | `std::vector` |
+| Long expressions                 | Significantly slower                   | Significantly faster                  | Lazy        |
+
 Classic implementation:
 ```cpp
 
