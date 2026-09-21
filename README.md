@@ -22,6 +22,12 @@ A from-scratch C++ `Vector` implementation focused on **low-level memory control
   - Educational focus on understanding how `std::vector` works under the hood
 
 ### Why Lazy Evaluation?
+| Scenario                                 | Lazy version vs ordinary `std::vector` | Expected speedup |
+| ---------------------------------------- | -------------------------------------- | ---------------- |
+| Simple expression (`a + b`)              | Roughly the same or slightly faster    | 1.0–1.4×         |
+| Medium expression (`a + b * c`)          | Noticeably faster                      | 1.6–2.5×         |
+| Long chain (`a + b * c - d + e`)         | Significantly faster                   | 2.5–4×+          |
+| Very small vectors (< 32 elements)       | Can be slower                          | 0.7–1.0×         |
 
 Classic implementation:
 ```cpp
